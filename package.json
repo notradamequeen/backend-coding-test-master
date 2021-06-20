@@ -9,10 +9,11 @@
   "scripts": {
     "start": "tsc && node --unhandled-rejections=strict ./dist/index.js",
     "debug": "export DEBUG=* && npm run start",
-    "test": "nyc _mocha --require ts-node/register --recursive src/**/*.spec.* tests/**/*.spec.*",
     "build": "npm run clean; npm run lint && npm run test",
     "lint": "eslint --fix src/ tests/ && tslint --fix src/**/*.ts tests/**/*.ts",
-    "dev": "concurrently \"tsc -w\" \"nodemon ./dist/index.js\""
+    "dev": "concurrently \"tsc -w\" \"nodemon ./dist/index.js\"",
+    "test": "nyc _mocha --require ts-node/register --recursive src/**/*.spec.* tests/**/*.spec.*",
+    "test:load": "concurrently -n server,artillery \"forever start ./dist/index.js\" \"sleep 5 && artillery run -e development load_test.yml\""
   },
   "nodemonConfig": {
     "watch": [
@@ -55,6 +56,7 @@
     "@types/supertest": "^2.0.11",
     "@types/swagger-jsdoc": "^6.0.0",
     "@types/swagger-ui-express": "^4.1.2",
+    "artillery": "^1.7.3",
     "chai": "^4.3.4",
     "concurrently": "^6.2.0",
     "eslint": "^4.10.0",
@@ -63,6 +65,7 @@
     "eslint-plugin-node": "^5.2.1",
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.1",
+    "forever": "^4.0.1",
     "mocha": "^6.1.4",
     "nodemon": "^2.0.7",
     "nyc": "^15.1.0",
