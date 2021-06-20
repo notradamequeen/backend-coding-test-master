@@ -5,7 +5,7 @@ import { Ride } from '../models';
 
 export default class {
 
-    static async getAllRides (startIndex: Number, endIndex: Number): Promise<Ride[]> {
+    static async getAllRides (startIndex: number, endIndex: number): Promise<Ride[]> {
         const rides = await db.all('SELECT * FROM Rides ORDER BY created LIMIT ?, ?', [startIndex, endIndex]);
         return rides as Ride[]
     }

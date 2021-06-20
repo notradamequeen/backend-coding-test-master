@@ -3,8 +3,8 @@ import { ApiErrorEnum } from '../enum';
 
 export const validateRide = (ride: Ride) => {
   if (ride.startLat < -90 || ride.startLat > 90 || ride.startLong < -180 || ride.startLong > 180) {
-    return { 
-      isValid: false, 
+    return {
+      isValid: false,
       error: {
           error_code: ApiErrorEnum.VALIDATION_ERROR,
           message: 'Start latitude and longitude must be between -90 - 90 and -180 to 180 degrees respectively'
@@ -51,6 +51,6 @@ export const validateRide = (ride: Ride) => {
       }
     };
   }
-  
+
   return {isValid: true, error: null}
 }

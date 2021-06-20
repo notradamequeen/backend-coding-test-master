@@ -30,12 +30,12 @@ export default class {
     });
   }
 
-  static generateDummyRides(count: number) {
+  static generateDummyRides (count: number) {
     const startLat = -90
     const startLon = -180
     for (let i = 0; i < count; i++) {
       // Generates dummy ride
-      let rideData = {
+      const rideData = {
         startLat: startLat + i + Number(`0.${i + 2}`),
         startLong: startLon + i + Number(`0.${i + 2}`),
         endLat: startLat + i + Number(`0.${i * 2}`),

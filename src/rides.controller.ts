@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { Get, Route } from "tsoa";
 import Logger from './lib/logger';
 import { Ride } from './models';
 import ridesRepository from './repository/rides.repository';
