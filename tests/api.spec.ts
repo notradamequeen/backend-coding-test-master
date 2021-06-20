@@ -1,4 +1,5 @@
 import rideRepo from '../src/repository/rides.repository';
+import db from '../src/repository/base.repository';
 import mocha from 'mocha';
 import {expect} from 'chai';
 import app from '../src/app';
@@ -45,7 +46,27 @@ describe('Test positive cases - rides Api', () => {
 
     const res = await request(app).get('/rides');
     expect(res.status).to.equal(200);
-    expect(res.body.length).to.greaterThan(0);
+    expect(res.body.count).to.greaterThan(0);
+  });
+
+  it('should success GET /rides with pagination', async () => {
+    db.generateDummyRides(20);
+    const mockRide: Ride = {
+        startLat: Number('30.5'),
+        startLong: Number('40.5'),
+        endLat: Number('-80.56'),
+        endLong: Number('76.5'),
+        riderName: 'test rider',
+        driverName: 'test driver',
+        driverVehicle: 'test vehicle'
+    }
+    await rideRepo.createRide(mockRide);
+
+    const res = await request(app).get(`/rides?page=1&limit=20`);
+    expect(res.status).to.equal(200);
+    expect(res.body.page).to.equal(1);
+    expect(res.body.result.length).to.greaterThan(10);
+    expect(res.body.count).to.greaterThan(0);
   });
 
   it('should success GET /rides/:rideId', async () => {

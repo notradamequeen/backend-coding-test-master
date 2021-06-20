@@ -5,9 +5,14 @@ import { Ride } from '../models';
 
 export default class {
 
-    static async getAllRides (): Promise<Ride[]> {
-        const rides = await db.all('SELECT * FROM Rides', [])
+    static async getAllRides (startIndex: number, endIndex: number): Promise<Ride[]> {
+        const rides = await db.all('SELECT * FROM Rides ORDER BY created LIMIT ?, ?', [startIndex, endIndex]);
         return rides as Ride[]
+    }
+
+    static async getTotalRidesCount (): Promise<number>{
+      const totalRides: any = await db.get('SELECT COUNT(*) FROM Rides', []);
+      return totalRides['COUNT(*)'] as number
     }
 
     static async getRideById (rideID: string): Promise<Ride> {

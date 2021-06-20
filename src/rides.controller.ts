@@ -4,19 +4,31 @@ import { Ride } from './models';
 import ridesRepository from './repository/rides.repository';
 import repo from './repository/rides.repository';
 import { ApiErrorEnum } from './enum';
+import { validateRide } from './utils/validation';
 
 
-export default class {
+export default class RidesController {
   static async getAllRides(req: Request, res: Response, next: NextFunction) {
+    const page = req.query.page ? Number(req.query.page) : 1
+    const limit = req.query.limit ? Number(req.query.limit) : 10
+    let startIndex = (page - 1) * limit
+    let endIndex = page * limit
+
     try {
-      const rides: Ride[] = await repo.getAllRides();
+      const totalRidesCount: number = await repo.getTotalRidesCount();
+      const rides: Ride[] = await repo.getAllRides(startIndex, endIndex);
       if (rides.length === 0) {
         return res.status(404).send({
             error_code: ApiErrorEnum.RIDES_NOT_FOUND_ERROR,
             message: 'Could not find any rides'
         })
       }
-      res.status(200).send(rides)
+      res.status(200).send({
+        page: page,
+        limit: limit,
+        count: totalRidesCount,
+        result: rides
+      });
     } catch (err) {
       Logger.error(`${err}`)
       return res.status(500).send({
@@ -26,17 +38,17 @@ export default class {
     }
   }
 
-  static async getRideById(req: Request, res: Response) {
+  static async getRideById(req: Request | any, res: Response | any) {
     const rideID: string = req.params.rideID
     try {
       const ride = await ridesRepository.getRideById(rideID);
       if (!ride) {
-        return res.status(404).send({
+        res.status(404).send({
           error_code: ApiErrorEnum.RIDES_NOT_FOUND_ERROR,
           message: 'Ride not found!'
         })
       }
-      return res.status(200).send(ride).status(200);
+      res.status(200).send(ride).status(200);
     } catch (err) {
       Logger.error(`${err}`)
       return res.status(500).send({
@@ -59,39 +71,9 @@ export default class {
     } 
     try {
 
-      if (ride.startLat < -90 || ride.startLat > 90 || ride.startLong < -180 || ride.startLong > 180) {
-          return res.status(400).send({
-              error_code: ApiErrorEnum.VALIDATION_ERROR,
-              message: 'Start latitude and longitude must be between -90 - 90 and -180 to 180 degrees respectively'
-          })
-      }
-
-      if (ride.endLat < -90 || ride.endLat > 90 || ride.endLong < -180 || ride.endLong > 180) {
-          return res.status(400).send({
-              error_code: ApiErrorEnum.VALIDATION_ERROR,
-              message: 'End latitude and longitude must be between -90 - 90 and -180 to 180 degrees respectively'
-          });
-      }
-
-      if (typeof ride.riderName !== 'string' || ride.riderName.length < 1) {
-          return res.status(400).send({
-              error_code: ApiErrorEnum.VALIDATION_ERROR,
-              message: 'Rider name must be a non empty string'
-          });
-      }
-
-      if (typeof ride.driverName !== 'string' || ride.driverName.length < 1) {
-          return res.status(400).send({
-              error_code: ApiErrorEnum.VALIDATION_ERROR,
-              message: 'Rider name must be a non empty string'
-          });
-      }
-
-      if (typeof ride.driverVehicle !== 'string' || ride.driverVehicle.length < 1) {
-          return res.status(400).send({
-              error_code: ApiErrorEnum.VALIDATION_ERROR,
-              message: 'Rider name must be a non empty string'
-          });
+      const { isValid, error } = validateRide(ride);
+      if (!isValid) {
+        res.status(400).send(error)
       }
 
 
