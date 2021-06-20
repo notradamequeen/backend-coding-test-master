@@ -12,30 +12,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const api_error_1 = require("./api.error");
 const logger_1 = __importDefault(require("./lib/logger"));
 const rides_repository_1 = __importDefault(require("./repository/rides.repository"));
 const rides_repository_2 = __importDefault(require("./repository/rides.repository"));
-class default_1 {
+const enum_1 = require("./enum");
+const validation_1 = require("./utils/validation");
+class RidesController {
     static getAllRides(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
+            const page = req.query.page ? Number(req.query.page) : 1;
+            const limit = req.query.limit ? Number(req.query.limit) : 10;
+            let startIndex = (page - 1) * limit;
+            let endIndex = page * limit;
             try {
-                const rides = yield rides_repository_2.default.getAllRides();
+                const totalRidesCount = yield rides_repository_2.default.getTotalRidesCount();
+                const rides = yield rides_repository_2.default.getAllRides(startIndex, endIndex);
                 if (rides.length === 0) {
                     return res.status(404).send({
-                        error_code: 'RIDES_NOT_FOUND_ERROR',
+                        error_code: enum_1.ApiErrorEnum.RIDES_NOT_FOUND_ERROR,
                         message: 'Could not find any rides'
                     });
                 }
-                res.status(200).send(rides);
+                res.status(200).send({
+                    page: page,
+                    limit: limit,
+                    count: totalRidesCount,
+                    result: rides
+                });
             }
             catch (err) {
                 logger_1.default.error(`${err}`);
-                return next(err);
-                // return res.send({
-                //     error_code: 'SERVER_ERROR',
-                //     message: 'Unknown error'
-                // });
+                return res.status(500).send({
+                    error_code: 'SERVER_ERROR',
+                    message: 'Unknown error'
+                });
             }
         });
     }
@@ -45,19 +55,19 @@ class default_1 {
             try {
                 const ride = yield rides_repository_1.default.getRideById(rideID);
                 if (!ride) {
-                    return res.send({
-                        error_code: 'RIDES_NOT_FOUND_ERROR',
+                    res.status(404).send({
+                        error_code: enum_1.ApiErrorEnum.RIDES_NOT_FOUND_ERROR,
                         message: 'Ride not found!'
-                    }).status(404);
+                    });
                 }
-                return res.status(200).send(ride).status(200);
+                res.status(200).send(ride).status(200);
             }
             catch (err) {
                 logger_1.default.error(`${err}`);
-                return res.send({
-                    error_code: 'SERVER_ERROR',
+                return res.status(500).send({
+                    error_code: enum_1.ApiErrorEnum.SERVER_ERROR,
                     message: 'Unknown error'
-                }).status(500);
+                });
             }
         });
     }
@@ -73,42 +83,14 @@ class default_1 {
                 driverVehicle: req.body.driver_vehicle
             };
             try {
-                if (ride.startLat < -90 || ride.startLat > 90 || ride.startLong < -180 || ride.startLong > 180) {
-                    // return res.send({
-                    //     error_code: 'VALIDATION_ERROR',
-                    //     message: 'Start latitude and longitude must be between -90 - 90 and -180 to 180 degrees respectively'
-                    // })
-                    throw new api_error_1.ValidationError('Start latitude and longitude must be between -90 - 90 and -180 to 180 degrees respectively');
-                }
-                if (ride.endLat < -90 || ride.endLat > 90 || ride.endLong < -180 || ride.endLong > 180) {
-                    // return res.send({
-                    //     error_code: 'VALIDATION_ERROR',
-                    //     message: 'End latitude and longitude must be between -90 - 90 and -180 to 180 degrees respectively'
-                    // });
-                    throw new api_error_1.ValidationError('End latitude and longitude must be between -90 - 90 and -180 to 180 degrees respectively');
-                }
-                if (typeof ride.riderName !== 'string' || ride.riderName.length < 1) {
-                    return res.send({
-                        error_code: 'VALIDATION_ERROR',
-                        message: 'Rider name must be a non empty string'
-                    });
-                }
-                if (typeof ride.driverName !== 'string' || ride.driverName.length < 1) {
-                    return res.send({
-                        error_code: 'VALIDATION_ERROR',
-                        message: 'Rider name must be a non empty string'
-                    });
-                }
-                if (typeof ride.driverVehicle !== 'string' || ride.driverVehicle.length < 1) {
-                    return res.send({
-                        error_code: 'VALIDATION_ERROR',
-                        message: 'Rider name must be a non empty string'
-                    });
+                const { isValid, error } = validation_1.validateRide(ride);
+                if (!isValid) {
+                    res.status(400).send(error);
                 }
                 const createdId = yield rides_repository_1.default.createRide(ride);
                 if (!createdId) {
-                    return res.send({
-                        error_code: 'SERVER_ERROR',
+                    return res.status(500).send({
+                        error_code: enum_1.ApiErrorEnum.SERVER_ERROR,
                         message: 'Unknown error'
                     });
                 }
@@ -117,10 +99,13 @@ class default_1 {
             }
             catch (err) {
                 logger_1.default.error(`${err}`);
-                next(err);
+                return res.status(500).send({
+                    error_code: enum_1.ApiErrorEnum.SERVER_ERROR,
+                    message: 'Unknown error'
+                });
             }
         });
     }
 }
-exports.default = default_1;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicmlkZXMuY29udHJvbGxlci5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9yaWRlcy5jb250cm9sbGVyLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7O0FBQ0EsMkNBQTZEO0FBQzdELDBEQUFrQztBQUVsQyxxRkFBNEQ7QUFDNUQscUZBQWlEO0FBR2pEO0lBQ0UsTUFBTSxDQUFPLFdBQVcsQ0FBQyxHQUFZLEVBQUUsR0FBYSxFQUFFLElBQWtCOztZQUN0RSxJQUFJO2dCQUNGLE1BQU0sS0FBSyxHQUFXLE1BQU0sMEJBQUksQ0FBQyxXQUFXLEVBQUUsQ0FBQztnQkFDL0MsSUFBSSxLQUFLLENBQUMsTUFBTSxLQUFLLENBQUMsRUFBRTtvQkFDdEIsT0FBTyxHQUFHLENBQUMsTUFBTSxDQUFDLEdBQUcsQ0FBQyxDQUFDLElBQUksQ0FBQzt3QkFDeEIsVUFBVSxFQUFFLHVCQUF1Qjt3QkFDbkMsT0FBTyxFQUFFLDBCQUEwQjtxQkFDdEMsQ0FBQyxDQUFBO2lCQUNIO2dCQUNELEdBQUcsQ0FBQyxNQUFNLENBQUMsR0FBRyxDQUFDLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQyxDQUFBO2FBQzVCO1lBQUMsT0FBTyxHQUFHLEVBQUU7Z0JBQ1osZ0JBQU0sQ0FBQyxLQUFLLENBQUMsR0FBRyxHQUFHLEVBQUUsQ0FBQyxDQUFBO2dCQUN0QixPQUFPLElBQUksQ0FBQyxHQUFHLENBQUMsQ0FBQTtnQkFDaEIsb0JBQW9CO2dCQUNwQixrQ0FBa0M7Z0JBQ2xDLCtCQUErQjtnQkFDL0IsTUFBTTthQUNQO1FBQ0gsQ0FBQztLQUFBO0lBRUQsTUFBTSxDQUFPLFdBQVcsQ0FBQyxHQUFZLEVBQUUsR0FBYTs7WUFDbEQsTUFBTSxNQUFNLEdBQVcsR0FBRyxDQUFDLE1BQU0sQ0FBQyxNQUFNLENBQUE7WUFDeEMsSUFBSTtnQkFDRixNQUFNLElBQUksR0FBRyxNQUFNLDBCQUFlLENBQUMsV0FBVyxDQUFDLE1BQU0sQ0FBQyxDQUFD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
+exports.default = RidesController;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicmlkZXMuY29udHJvbGxlci5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9yaWRlcy5jb250cm9sbGVyLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7O0FBRUEsMERBQWtDO0FBRWxDLHFGQUE0RDtBQUM1RCxxRkFBaUQ7QUFDakQsaUNBQXNDO0FBQ3RDLG1EQUFrRDtBQUdsRCxNQUFxQixlQUFlO0lBQ2xDLE1BQU0sQ0FBTyxXQUFXLENBQUMsR0FBWSxFQUFFLEdBQWEsRUFBRSxJQUFrQjs7WUFDdEUsTUFBTSxJQUFJLEdBQUcsR0FBRyxDQUFDLEtBQUssQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQUMsS0FBSyxDQUFDLElBQUksQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUE7WUFDeEQsTUFBTSxLQUFLLEdBQUcsR0FBRyxDQUFDLEtBQUssQ0FBQyxLQUFLLENBQUMsQ0FBQyxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQUMsS0FBSyxDQUFDLEtBQUssQ0FBQyxDQUFDLENBQUMsQ0FBQyxFQUFFLENBQUE7WUFDNUQsSUFBSSxVQUFVLEdBQUcsQ0FBQyxJQUFJLEdBQUcsQ0FBQyxDQUFDLEdBQUcsS0FBSyxDQUFBO1lBQ25DLElBQUksUUFBUSxHQUFHLElBQUksR0FBRyxLQUFLLENBQUE7WUFFM0IsSUFBSTtnQkFDRixNQUFNLGVBQWUsR0FBVyxNQUFNLDBCQUFJLENBQUMsa0JBQWtCLEVBQUUsQ0FBQztnQkFDaEUsTUFBTSxLQUFLLEdBQVcsTUFBTSwwQkFBSSxDQUFDLFdBQVcsQ0FBQyxVQUFVLEVBQUUsUUFBUSxDQUFDLENBQUM7Z0JBQ25FLElBQUksS0FBSyxDQUFDLE1BQU0sS0FBSyxDQUFDLEVBQUU7b0JBQ3RCLE9BQU8sR0FBRyxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQUMsQ0FBQyxJQUFJLENBQUM7d0JBQ3hCLFVBQVUsRUFBRSxtQkFBWSxDQUFDLHFCQUFxQjt3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

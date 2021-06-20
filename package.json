@@ -11,8 +11,15 @@
     "debug": "export DEBUG=* && npm run start",
     "test": "nyc _mocha --require ts-node/register --recursive src/**/*.spec.* tests/**/*.spec.*",
     "build": "npm run clean; npm run lint && npm run test",
-    "coverage": "node_modules/.bin/http-server coverage/",
-    "lint": "eslint --fix src/ tests/ && tslint --fix src/**/*.ts tests/**/*.ts"
+    "lint": "eslint --fix src/ tests/ && tslint --fix src/**/*.ts tests/**/*.ts",
+    "dev": "concurrently \"tsc -w\" \"nodemon ./dist/index.js\""
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src"
+    ],
+    "ext": "ts",
+    "exec": "ts-node index.ts"
   },
   "pre-push": [
     "lint",
@@ -26,7 +33,6 @@
   "license": "ISC",
   "dependencies": {
     "@types/sqlite3": "^3.1.7",
-    "@types/swagger-ui-express": "^4.1.2",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "debug": "^4.3.1",
@@ -45,9 +51,12 @@
     "@types/express": "^4.17.12",
     "@types/mocha": "^8.2.2",
     "@types/node": "^15.12.4",
+    "@types/sinon": "^10.0.2",
     "@types/supertest": "^2.0.11",
     "@types/swagger-jsdoc": "^6.0.0",
+    "@types/swagger-ui-express": "^4.1.2",
     "chai": "^4.3.4",
+    "concurrently": "^6.2.0",
     "eslint": "^4.10.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.8.0",
@@ -55,8 +64,10 @@
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.1",
     "mocha": "^6.1.4",
+    "nodemon": "^2.0.7",
     "nyc": "^15.1.0",
     "pre-push": "^0.1.1",
+    "sinon": "^11.1.1",
     "source-map-support": "^0.5.19",
     "supertest": "^4.0.2",
     "ts-node": "^10.0.0",
