@@ -7,6 +7,9 @@ config:
                 - duration: 30
                   arrivalRate: 100
                   rampTo: 50
+            defaults:
+                headers:
+                    x-api-key: "6qtCfJYiQXMwaGXxgHFPMLFoIjcFlvuUJgBrQIrY"
             variables:
                 page:
                     - "1"
