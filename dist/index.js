@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const logger_1 = __importDefault(require("./src/lib/logger"));
 const app_1 = __importDefault(require("./src/app"));
-const port = 8010;
+const port = 8000;
 app_1.default.listen(port, () => {
     logger_1.default.info(`App started and listening on port ${port}`);
 });
