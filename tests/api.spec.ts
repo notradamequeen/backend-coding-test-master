@@ -6,6 +6,9 @@ import app from '../src/app';
 import {agent as request} from 'supertest';
 import { Ride } from '../src/models';
 import { ApiErrorEnum } from '../src/enum';
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 describe('GET /health', () => {
   it('should return health', (done) => {
@@ -15,6 +18,8 @@ describe('GET /health', () => {
       .expect(200, done);
   });
 });
+
+const header = {"x-api-key": process.env.API_KEY}
 
 describe('Test positive cases - rides Api', () => {
   it('should success POST /rides', async () => {
@@ -27,7 +32,7 @@ describe('Test positive cases - rides Api', () => {
         driver_name: 'test driver',
         driver_vehicle: 'test vehicle'
     }
-    const res = await request(app).post('/rides').send(rideData);
+    const res = await request(app).post('/rides').send(rideData).set(header);
     expect(res.status).to.equal(201);
     expect(res.body).to.haveOwnProperty('rideID');
   });
@@ -44,7 +49,7 @@ describe('Test positive cases - rides Api', () => {
     }
     await rideRepo.createRide(mockRide);
 
-    const res = await request(app).get('/rides');
+    const res = await request(app).get('/rides').set(header);
     expect(res.status).to.equal(200);
     expect(res.body.count).to.greaterThan(0);
   });
@@ -62,7 +67,7 @@ describe('Test positive cases - rides Api', () => {
     }
     await rideRepo.createRide(mockRide);
 
-    const res = await request(app).get(`/rides?page=1&limit=20`);
+    const res = await request(app).get(`/rides?page=1&limit=20`).set(header);
     expect(res.status).to.equal(200);
     expect(res.body.page).to.equal(1);
     expect(res.body.result.length).to.greaterThan(10);
@@ -81,7 +86,7 @@ describe('Test positive cases - rides Api', () => {
     }
     const rideId = await rideRepo.createRide(mockRide);
 
-    const res = await request(app).get(`/rides/${rideId}`);
+    const res = await request(app).get(`/rides/${rideId}`).set(header);
     expect(res.status).to.equal(200);
     expect(res.body.rideID).to.equal(rideId);
     expect(res.body.startLat).to.equal(mockRide.startLat);
@@ -92,7 +97,7 @@ describe('Test positive cases - rides Api', () => {
 });
 
 describe('Test negative cases - rides Api', () => {
-  it('should failed validation start lat long - POST /rides', async () => {
+  it('should failed unauthorized error - POST /rides', async () => {
     const rideData = {
         start_lat: '-125.5',
         start_long: '130.5',
@@ -103,6 +108,20 @@ describe('Test negative cases - rides Api', () => {
         driver_vehicle: 'test vehicle'
     }
     const res = await request(app).post('/rides').send(rideData);
+    expect(res.status).to.equal(401);
+  });
+
+  it('should failed validation start lat long - POST /rides', async () => {
+    const rideData = {
+        start_lat: '-125.5',
+        start_long: '130.5',
+        end_lat: '-80.56',
+        end_long: '76.5',
+        rider_name: 'test rider',
+        driver_name: 'test driver',
+        driver_vehicle: 'test vehicle'
+    }
+    const res = await request(app).post('/rides').send(rideData).set(header);
     expect(res.status).to.equal(400);
     expect(res.body.error_code).to.equal(ApiErrorEnum.VALIDATION_ERROR);
   });
@@ -117,7 +136,7 @@ describe('Test negative cases - rides Api', () => {
         driver_name: 'test driver',
         driver_vehicle: 'test vehicle'
     }
-    const res = await request(app).post('/rides').send(rideData);
+    const res = await request(app).post('/rides').send(rideData).set(header);
     expect(res.status).to.equal(400);
     expect(res.body.error_code).to.equal(ApiErrorEnum.VALIDATION_ERROR);
   });
@@ -132,7 +151,7 @@ describe('Test negative cases - rides Api', () => {
         driver_name: 'test driver',
         driver_vehicle: 'test vehicle'
     }
-    const res = await request(app).post('/rides').send(rideData);
+    const res = await request(app).post('/rides').send(rideData).set(header);
     expect(res.status).to.equal(400);
     expect(res.body.error_code).to.equal(ApiErrorEnum.VALIDATION_ERROR);
   });
@@ -147,7 +166,7 @@ describe('Test negative cases - rides Api', () => {
         driver_name: '',
         driver_vehicle: 'test vehicle'
     }
-    const res = await request(app).post('/rides').send(rideData);
+    const res = await request(app).post('/rides').send(rideData).set(header);
     expect(res.status).to.equal(400);
     expect(res.body.error_code).to.equal(ApiErrorEnum.VALIDATION_ERROR);
   });
@@ -162,21 +181,33 @@ describe('Test negative cases - rides Api', () => {
           driver_name: 'test driver',
           driver_vehicle: ''
       }
-      const res = await request(app).post('/rides').send(rideData);
+      const res = await request(app).post('/rides').send(rideData).set(header);
       expect(res.status).to.equal(400);
       expect(res.body.error_code).to.equal(ApiErrorEnum.VALIDATION_ERROR);
   });
 
-  it('should failed not found rider - GET /rides', async () => {
+  it('should failed unauthorized error - GET /rides', async () => {
       await rideRepo.truncateRides();
       const res = await request(app).get('/rides');
+      expect(res.status).to.equal(401);
+  });
+
+  it('should failed not found rider - GET /rides', async () => {
+      await rideRepo.truncateRides();
+      const res = await request(app).get('/rides').set(header);
       expect(res.status).to.equal(404);
       expect(res.body.error_code).to.equal(ApiErrorEnum.RIDES_NOT_FOUND_ERROR);
   });
 
+  it('should failed unauthorized error - GET /rides/:rideId', async () => {
+    await rideRepo.truncateRides();
+    const res = await request(app).get('/rides/1');
+    expect(res.status).to.equal(401);
+  });
+
   it('should failed not found rider - GET /rides/:rideId', async () => {
       await rideRepo.truncateRides();
-      const res = await request(app).get('/rides/1');
+      const res = await request(app).get('/rides/1').set(header);
       expect(res.status).to.equal(404);
       expect(res.body.error_code).to.equal(ApiErrorEnum.RIDES_NOT_FOUND_ERROR);
   });

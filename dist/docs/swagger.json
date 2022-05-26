@@ -54,6 +54,12 @@
                 "summary": "Get list of rides with pagination",
                 "parameters": [
                     {
+                        "name": "x-api-key",
+                        "in": "header",
+                        "description": "6qtCfJYiQXMwaGXxgHFPMLFoIjcFlvuUJgBrQIrY",
+                        "type": "string"
+                    },
+                    {
                         "name": "page",
                         "in": "query",
                         "required": false,
@@ -69,6 +75,9 @@
                     }
                 ],
                 "responses": {
+                    "401": {
+                        "description": "UNAUTHORIZED ERROR"
+                    },
                     "200": {
                         "description": "OK",
                         "schema": {
@@ -92,6 +101,14 @@
             "post": {
                 "tags": ["Rides"],
                 "summary": "Create a ride record",
+                "parameters": [
+                    {
+                        "name": "x-api-key",
+                        "in": "header",
+                        "description": "6qtCfJYiQXMwaGXxgHFPMLFoIjcFlvuUJgBrQIrY",
+                        "type": "string"
+                    }
+                ],
                 "requestBody": {
                     "description": "Ride object",
                     "required": true,
@@ -133,6 +150,12 @@
         },
         "/rides/{rideID}": {
             "parameters": [
+                {
+                    "name": "x-api-key",
+                    "in": "header",
+                    "description": "6qtCfJYiQXMwaGXxgHFPMLFoIjcFlvuUJgBrQIrY",
+                    "type": "string"
+                },
                 {
                     "name": "rideID",
                     "in": "path",
